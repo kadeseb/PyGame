@@ -23,19 +23,19 @@ class Manager:
 	def __init__( self ):
 		# Initialisation de TkInter
 		self.tk = Tk( )
-		self.tk.wm_title(' ') 
+		self.tk.wm_title(' ')
 		self.tk.withdraw()
 
 		# Initialisation de l'object
 		self.imageBank = ImageBank()
-		self.windowList = [] 
+		self.windowList = []
 		self.commandQueue = []
 
 		self.mode = {
 			'cw': self.MODE_CreateWindow
 		}
 
-	# Execute une commande 
+	# Execute une commande
 	# -?-
 	# [list] command:	Commande à exécuter
 	def Execute( self, command ):
@@ -46,7 +46,7 @@ class Manager:
 
 		return Manager.STATUSCODE['OK']
 
-	# Ajoute une commande dans la liste 
+	# Ajoute une commande dans la liste
 	# -?-
 	# [list] command:	Commande à ajouter
 	def PushCommand( self, command ):
@@ -64,12 +64,17 @@ class Manager:
 		except IndexError:
 			return Manager.STATUSCODE['BADCMD']
 
+	# Rafraichie les fenêtres
+	def Update( self ):
+		for windowID in xrange( 0, len( self.windowList ) ):
+			self.windowsList[ windowID ].update()
+
+
 	# Execute les commandes en attente
 	def ExecuteQueue( self ):
-		#if len( self.commandQueue ):
-		#	print 't'
+		#print self.commandQueue
 
-		for commandID in xrange( len( self.commandQueue ) - 1, 0, -1 ):
+		for commandID in xrange( 0, len( self.commandQueue ), 1 ):
 			print 'triaiter'
 			command = self.commandQueue.pop()
 			self.mode[ command[0] ]( command[1:] )
@@ -137,12 +142,14 @@ class BaseWindow( Toplevel ):
 		self.configure( background='green' )
 		self.resizable( width=False, height=False )
 
-		self.__config__.randomPosition = False
+		self.__config = {
+			'randomPosition': False
+		}
 
 	def setRandomPosition( self, state ):
-		self.__config__.randomPosition = state
+		self.__config__['randomPosition'] = state
 
-		if self.__config__.randomPosition:
+		if self.__config__['randomPosition']:
 			self.after( CONFIG['WINDOWS_POSUPDATEINTERVAL'], self.randomPosition )
 
 	def setPosition( self, x, y ):
@@ -154,7 +161,7 @@ class BaseWindow( Toplevel ):
 
 		self.setPosition( x, y )
 
-		if self.__config__.randomPosition:
+		if self.__config__['randomPosition']:
 			self.after( CONFIG['WINDOWS_POSUPDATEINTERVAL'], self.randomPosition )
 
 #-------------------

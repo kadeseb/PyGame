@@ -11,7 +11,6 @@ import os
 import pygame.mixer as Mixer
 # ---
 import config
-from Tkinter import *
 import network as Network
 import action
 
@@ -29,5 +28,3 @@ server.start()
 
 while not manager.askExit():
 	manager.action()
-
-
