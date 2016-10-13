@@ -8,5 +8,6 @@ Programme écrit en Python permettant d'effectuer des actions à l'insu d'un uti
 Dépendances (Python2.7):
 * Tkinter
 * Pygame
+* PIL
 
 
