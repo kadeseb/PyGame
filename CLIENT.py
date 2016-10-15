@@ -7,55 +7,65 @@
 # Crée le:	09/10/2016
 # ----------------------------------------
 import sys
-import socket
 import network as Network
+from docopt import docopt
 
-print '**********************'
-print '* PyBlague Client v1 *'
-print '**********************'
+help = '''
+Usage:
+	CLIENT.py <serveur> [port]
 
-# Contrôle des arguments
-if len( sys.argv ) < 3:
-	print 'Usage: CLIENT.py <serveur> <port>'
-	print ''
-	print 'server: Adresse du serveur'
-	print 'port: \tPort en écoute sur le serveur'
-	exit( 1 )
+Options
+	-h --help	Affiche l'aide.
+	--version  	Affiche la version.
+'''
 
-server = sys.argv[1]
-port = sys.argv[2]
+if __name__ == '__main__':
+	arguments = docopt( help, version='PyJoke Client 1.0' )
 
-# Contrôle du port
-if( not Network.portIsValid( port ) ):
-	print '-> [Erreur] Le port spécifé est invalide !'
-	exit( 1 )
-else:
-	port = int( port )
+	#///////////////////////////
+	# Extraction des arguments /
+	#///////////////////////////
+	server = arguments['<serveur>']
 
-print '-> Tentative de connexion à %s:%d' % (server, port)
+	if not arguments['port']:
+		port = 2048
+	elif( not Network.portIsValid( arguments['port'] ) ):
+		print '-> [Erreur] Le port spécifié est invalide !'
+		exit( 1 )
+	else:
+		port = int( arguments['port'] )
 
-client = Network.Client( server, port )
+	#/////////////////////////
+	# Execution du programme /
+	#/////////////////////////
+	print '**********************'
+	print '* PyBlague Client v1 *'
+	print '**********************'
+	print '-> Tentative de connexion à %s:%d' % (server, port)
 
-if( not client.isConnected() ):
-	print '-> [Erreur] Connection refusé !'
-	exit( 1 )
+	client = Network.Client( server, port )
+	if( not client.isConnected() ):
+		print '-> [Erreur] Connection refusé !'
+		exit( 1 )
+	else:
+		print '-> Connecté !'
+		print '======================'
 
-print '-> Connecté !'
 
-while True:
-	command = raw_input( '#> ' )
-	command = command.upper()
+	while True:
+		command = raw_input( '#> ' )
+		command = command.upper()
 
-	if not client.sendCommand( command ):
-		print '-> [Erreur] Connexion interrompu !'
-		exit( 0 )
+		if not client.sendCommand( command ):
+			print '-> [Erreur] Connexion interrompu !'
+			exit( 0 )
 
-	response = client.getResponse()
-	if len(response) > 0:
-		response = response.split( '\n' )
+		response = client.getResponse()
+		if len(response) > 0:
+			response = response.split( '\n' )
 
-		for line in response:
-			print '|> %s' % line
+			for line in response:
+				print '|> %s' % line
 
-	if( command == 'E' or command == 'EXIT' ):
-		exit(0)
+		if( command == 'E' or command == 'EXIT' ):
+			exit(0)

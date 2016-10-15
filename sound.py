@@ -13,6 +13,8 @@ from config import *
 from functions import *
 
 class Manager():
+    Mixer.init()
+
     # > Constructeur
     def __init__( self ):
         self.soundList = os.listdir( CONFIG['SOUNDS_DIR'] )
@@ -26,7 +28,12 @@ class Manager():
     # -!-
     # [bool]            Le son est valide
     def validSound( self, soundID ):
-        return isinstance( soundID, int ) and ( soundID >= 0 ) and ( soundID < len( self.soundList ) )
+        try:
+            soundID = int( soundID )
+        except ValueError:
+            return False
+
+        return soundID >= 0 and soundID < len( self.soundList )
 
     # Retourne la liste des son
     # -!-
@@ -43,7 +50,11 @@ class Manager():
                 Mixer.music.load( CONFIG['SOUNDS_DIR'] + self.soundList[ soundConfig['ID'] ] )
                 Mixer.music.play()
                 self.playlistTimer = time.time()
-                self.nextDelay = soundConfig['nextDelay']
+
+                if( len( self.playlist ) ):
+                    self.nextDelay = soundConfig['nextDelay']
+                else:
+                    self.nextDelay = 0
 
     #//////////////////////////////////////
     # Manipulation de la liste de lecture /

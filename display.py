@@ -14,12 +14,6 @@ from functions import *
 from bank import *
 
 class Manager:
-	STATUSCODE = {
-		'OK': 0,
-		'BADCMD': 1,
-		'BADARG': 2
-	}
-
 	def __init__( self ):
 		# Initialisation de TkInter
 		self.tk = Tk( )
@@ -29,108 +23,40 @@ class Manager:
 		# Initialisation de l'object
 		self.imageBank = ImageBank()
 		self.windowList = []
-		self.commandQueue = []
+		self.titleList = [
+			'TITLE1',
+			'TITLE2',
+			'TITLE3'
+		]
 
-		self.mode = {
-			'cw': self.MODE_CreateWindow
-		}
-
-	# Execute une commande
-	# -?-
-	# [list] command:	Commande à exécuter
-	def Execute( self, command ):
-		try:
-			self.mode[ command[0] ]( command[1:] )
-		except IndexError:
-			return Manager.STATUSCODE['BADCMD']
-
-		return Manager.STATUSCODE['OK']
-
-	# Ajoute une commande dans la liste
-	# -?-
-	# [list] command:	Commande à ajouter
-	def PushCommand( self, command ):
-		# Vérifie la commande
-		try:
-			returnCode = self.mode[ command[0] ]( command[1:], True )
-
-			# Ajoute la commande dans la liste
-			self.commandQueue.append( command )
-
-			print 'push'
-			print self.commandQueue
-
-			return returnCode
-		except IndexError:
-			return Manager.STATUSCODE['BADCMD']
-
-	# Rafraichie les fenêtres
-	def Update( self ):
+	# Rafraichi les fenêtres
+	def update( self ):
 		for windowID in xrange( 0, len( self.windowList ) ):
-			self.windowsList[ windowID ].update()
+			self.windowList[ windowID ].update()
 
-
-	# Execute les commandes en attente
-	def ExecuteQueue( self ):
-		#print self.commandQueue
-
-		for commandID in xrange( 0, len( self.commandQueue ), 1 ):
-			print 'triaiter'
-			command = self.commandQueue.pop()
-			self.mode[ command[0] ]( command[1:] )
-			command.pop()
-
-		'''
-		while( len( self.commandQueue ) != 0 ):
-			print 'triaiter'
-			command = self.commandQueue.pop()
-			self.mode[ command[0] ]( command[1:] )
-			command.pop()
-		'''
-
-	#////////
-	# Modes /
-	#////////
-
-	# Permet de créer une fenêtre
+	##
+	# Permet de créer un fenêtre
 	# -?-
-	# [string] Command:		Commande à effectuer
+	# [dict] configuration:	Configuration de la fenêtre
+	# : {
+	#	'IMAGE': 		[int]/[None] ID de l'image à afficher
+	# 	'RANDOMIZEPOS': 	[bool] Position de la fenêtre aléatoire
+	#   'TITLE':		[string]/[None] Nom de la fenêtre / Nom aléatoire
+	# }
+	##
+	def createWindow( self, configuration ):
+		window = WindowImage( self.imageBank, configuration )
+		self.windowList.append( window )
+
+	# Liste les fenêtres disponibles
 	# -!-
-	# [Manager.STATUSCODE]:	Rapport de déroulement ]
-	def MODE_CreateWindow( self, command, testOnly = False ):
-		print 'disp ok'
+	# [list]
+	def getWindowList( self, configuration ):
+		0
 
-		commandCount = len( command )
-
-		# Nombre de fenêtre à ajouter
-		if( commandCount == 0 ):
-			windowCount = 1
-		elif( strIsInt( command[ 0 ] ) ):
-			windowCount = int( command[ 0 ] )
-
-		# Image
-		if( commandCount < 2  ):
-			imageID = -1
-		elif( strIsInt( command[1] ) ):
-			imageID = command[ 1 ]
-
-		# Randomize positions
-		if( commandCount < 3 ):
-			randomizePosition = True
-		elif( strIsInt( command[2] ) ):
-			randomizePosition = bool( command[ 2 ] )
-
-		if( testOnly ):
-			return True
-		else:
-			# Création des élements
-			for windowID in xrange( 0, windowCount ):
-				window = BaseWindow()
-				window.setRandomPosition( randomizePosition )
-
-				self.windowList.append( window )
-
-			return True
+	# Retourn imageBank
+	def getImageBank( self ):
+		return self.imageBank
 
 #///////////////////////
 # Elements affichables /
@@ -138,22 +64,28 @@ class Manager:
 class BaseWindow( Toplevel ):
 	def __init__( self ):
 		Toplevel.__init__( self )
+
+		# Initialisation
+		self._randomizePosition = False
+		self._title = ' '
+		self.width = 500
+		self.height = 500
+
+		# Configuration
 		self.title( ' ' )
 		self.configure( background='green' )
 		self.resizable( width=False, height=False )
-
-		self.__config = {
-			'randomPosition': False
-		}
+		self.randomPosition()
 
 	def setRandomPosition( self, state ):
-		self.__config__['randomPosition'] = state
+		self._randomizePosition = bool( state )
 
-		if self.__config__['randomPosition']:
+		if self._randomizePosition:
 			self.after( CONFIG['WINDOWS_POSUPDATEINTERVAL'], self.randomPosition )
 
 	def setPosition( self, x, y ):
-		self.geometry( "%dx%d+%d+%d" % ( self.winfo_width(), self.winfo_height(), x, y ) )
+		#self.geometry( "%dx%d+%d+%d" % ( self.winfo_width(), self.winfo_height(), x, y ) )
+		self.geometry( "%dx%d+%d+%d" % ( self.width, self.height, x, y ) )
 
 	def randomPosition( self ):
 		x = random.randrange( 0, self.winfo_screenwidth() - self.winfo_width() )
@@ -161,12 +93,54 @@ class BaseWindow( Toplevel ):
 
 		self.setPosition( x, y )
 
-		if self.__config__['randomPosition']:
+		if self._randomizePosition:
 			self.after( CONFIG['WINDOWS_POSUPDATEINTERVAL'], self.randomPosition )
 
 #-------------------
 # Gère une fenêtre -
 #-------------------
+class WindowImage( BaseWindow ):
+	def __init__( self, imageBank, configuration ):
+		BaseWindow.__init__( self )
+		self.applyConfig( configuration, imageBank )
+
+	# : {
+	#	'IMAGE': 		[int]/[None] ID de l'image à afficher
+	# 	'RANDOMIZE': 	[bool] Position de la fenêtre aléatoire
+	#   'TITLE':		[string]/[None] Nom de la fenêtre / Nom aléatoire
+	# }
+	def applyConfig( self, configuration, imageBank ):
+		if( (not 'IMAGE' in configuration) or (not 'RANDOMIZEPOS' in configuration) or (not 'TITLE' in configuration) ):
+			return False
+
+		# Intégration de l'image
+		if( configuration['IMAGE'] == None ):
+			image = imageBank.getRandomImage()
+		else:
+			image = imageBank.getImage( int( configuration['IMAGE'] ) )
+
+			if( image == None ):
+				return False
+
+		self.width, self.height = image['width'], image['height']
+		self.geometry( '%dx%d' % (self.width, self.height) )
+
+		self.canvas = Canvas( self, width=self.width, height= self.height )
+		self.canvas.create_image( 0, 0, anchor=NW, image=image['photoimage'] )
+		self.canvas.pack()
+
+		# Position aléatoire
+		self.setRandomPosition( configuration['RANDOMIZEPOS'] )
+
+		# Choix du titre
+		if( configuration['TITLE'] == None ):
+			#self.wm_title( self.titleList[ random.randrange( 0, len( self.titleList ) ) ] )
+			self.wm_title( 'Titre par défault' )
+		elif( isinstance( configuration['TITLE'], str ) ):
+			self.wm_title( configuration['TITLE'] )
+		else:
+			return False
+
 """
 class Window( Toplevel ):
 	def __init__( self, imageBank ):
@@ -199,5 +173,5 @@ class ImageWindow( BaseWindow ):
 		self.canvas = Canvas( self, width=image['width'], height=image['height'] )
 		self.canvas.create_image( 0, 0, anchor=NW, image=image['photoimage'] )
 		self.canvas.pack()
-		'''
-		#self.withdraw()
+
+		self.withdraw()'''

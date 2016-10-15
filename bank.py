@@ -9,6 +9,7 @@
 import os
 import PIL.Image
 import PIL.ImageTk
+import random
 from config import *
 
 #--------------------
@@ -37,7 +38,8 @@ class ImageBank():
 				'width': image.size[0],
 				'height': image.size[1],
 				'image': image,
-				'photoimage': PIL.ImageTk.PhotoImage( image )
+				'photoimage': PIL.ImageTk.PhotoImage( image ),
+				'name': imageNameList[i]
 			}
 
 			self.imageList.append( container )
@@ -45,9 +47,44 @@ class ImageBank():
 	##
 	# Retourne une image aléatoire
 	# -!-
-	#  [dict]
+	# [dict]
 	##
 	def getRandomImage( self ):
 		index = random.randrange( 0, len( self.imageList ) )
 
 		return self.imageList[ index ]
+
+	##
+	# Retourne l'image spécifié
+	# -?-
+	# [int] imageID:	ID de l'image
+	# -!-
+	# [dict]
+	##
+	def getImage( self, imageID ):
+		if( self.exist( imageID ) ):
+			return self.imageList[ imageID ]
+		else:
+			return None
+
+	##
+	# Vérifie l'existence d'une image
+	# -?-
+	# [int] imageID:	ID de l'imageID
+	# -!-
+	# [bool]
+	##
+	def exist( self, imageID ):
+		try:
+			self.imageList[ imageID ]
+		except KeyError:
+			return False
+		return True
+
+	##
+	# Retourne la liste des images disponibles
+	# -!-
+	# [list]
+	##
+	def getList( self ):
+		return self.imageList
