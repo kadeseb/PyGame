@@ -54,6 +54,9 @@ class ImageBank():
 
 		return self.imageList[ index ]
 
+	def getRandomImageID( self ):
+		return random.randrange( 0, len( self.imageList ) )
+
 	##
 	# Retourne l'image spécifié
 	# -?-

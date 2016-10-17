@@ -101,8 +101,8 @@ class Manager:
 	# Execute les commandes en attente
 	##
 	def performCommand( self ):
-		for identiant, container in self.commandQueue.iteritems():
-			command = container['COMMAND'].lower().split()
+		for identifiant, container in self.commandQueue.iteritems():
+			command = container['COMMAND'].split()
 
 			if( len( command ) and command[0] in self.COMMAND ):
 				call = self.COMMAND[ command[0] ] + '( "%s" )' % command[0]
@@ -268,7 +268,7 @@ class Command_Window( Command ):
 	_FORMAT_ += '	$CMD list (image | window)\n'
 	_FORMAT_ += '	$CMD create [options] [<count>]\n'
 	_FORMAT_ += '	$CMD set [options] <windowID>... \n'
-	_FORMAT_ += '	$CMD close [all | (<windowsID>...)]\n'
+	_FORMAT_ += '	$CMD close [all | (<windowID>...)]\n'
 	_FORMAT_ += '\n'
 	_FORMAT_ += 'Options:\n'
 	_FORMAT_ += '-r=(1 | 0) --randomizePosition=(1 | 0)	Position de la fenêtre aléatoire\n'
@@ -276,64 +276,123 @@ class Command_Window( Command ):
 	_FORMAT_ += '-t=TITLE --title=TITLE 		Titre de la fênetre'
 
 	def action( self, arguments, commandManager ):
-		print arguments
-
 		# Liste des images/fenêtre
 		if( arguments['list'] ):
 			if( arguments['image'] ):
-				imageList = commandManager['DISPLAY'].getImageBank().getList()
-
-				self.output += 'Liste des images:\n'
-				self.output += '[ID]\t[Taille]\t[Nom]'
-
-				for imageID in xrange( 0, len( imageList ) ):
-					size = '%dx%d' % ( imageList[imageID]['width'], imageList[imageID]['height'] )
-					name = imageList[imageID]['name']
-
-					self.output += '\n%d\t\t%s\t\t%s' % ( imageID, size, name  )
-
-				self.code = Command._CODE_['OK']
-				return
+				self.listImage( commandManager['DISPLAY'] )
+			elif( arguments['window'] ):
+				self.listWindow( commandManager['DISPLAY'] )
+			return
 
 		# Création d'une fenêtre
 		elif( arguments['create'] ):
-			if( arguments['--image'] ):
-				if( arguments['--image'] == '?' ):
-					image = None
-				elif( strIsInt( arguments['--image'] ) ):
-					image = int( arguments['--image'] )
-				else:
-					self.code = Command._CODE_['BADARG']
-					return
+			self.create( arguments, commandManager['DISPLAY'] )
+
+		# Réglage d'une fenêtre
+		elif( arguments['set'] ):
+			self.set( arguments, commandManager['DISPLAY'] )
+
+		# Fermeture de fenêtre
+		elif( arguments['close'] ):
+			self.close( arguments, commandManager['DISPLAY'] )
+
+	# Liste les images disponibles
+	def listImage( self, displayManager ):
+		imageList = displayManager.getImageBank().getList()
+
+		self.output += 'Liste des images:\n'
+		self.output += '[ID]\t[Taille]\t[Nom]'
+
+		for imageID in xrange( 0, len( imageList ) ):
+			size = '%dx%d' % ( imageList[imageID]['width'], imageList[imageID]['height'] )
+			name = imageList[imageID]['name']
+
+			self.output += '\n%d\t\t%s\t\t%s' % ( imageID, size, name  )
+
+		self.code = Command._CODE_['OK']
+
+	##
+	# Liste les fenêtres ouvertes
+	##
+	def listWindow( self, displayManager ):
+		self.output += 'Liste des fenêtres:\n'
+		self.output += '[ID]\t[RandPos]\t[Image]\t'
+
+		for windowID in displayManager.getWindowIDList():
+			window = displayManager.getWindow( windowID )
+
+			self.output += '\n %d\t\t %d\t\t %s' % ( windowID, window.getRandomPosition() ,window.getImageName() )
+
+		self.code = Command._CODE_['OK']
+
+	# Créer une fenêtre
+	# -?-
+	# [dict] arguments
+	# [Display.Manager] displayManager
+	def create( self, arguments, displayManager ):
+		config = displayManager.createConfig( arguments['--image'], arguments['--randomizePosition'], arguments['--title'] )
+
+		if( config == None ):
+			self.code = Command._CODE_['BADARG']
+			return
+
+		if( arguments['<count>'] ):
+			if( strIsInt( arguments['<count>'] ) ):
+				windowCount = int( arguments['<count>'] )
 			else:
-				image = None
+				self.code = Command._CODE_['BADARG']
+				return
+		else:
+			windowCount = 1
 
-			if( arguments['--title'] ):
-				title = arguments['--title']
-			else:
-				title = None
+		for i in xrange( 0, windowCount ):
+			displayManager.createWindow( config )
 
-			if( arguments['--randomizePosition'] ):
-				randomizePosition = bool( int (arguments['--randomizePosition'] ) )
-			else:
-				randomizePosition = True
+	# Edite les propriétés d'une fenêtre
+	def set( self, arguments, displayManager ):
+		config = displayManager.createConfig( arguments['--image'], arguments['--randomizePosition'], arguments['--title'] )
+		valid = 0
 
-			configuration = {
-				'IMAGE': image,
-				'RANDOMIZEPOS': randomizePosition,
-				'TITLE': title
-			}
+		for windowID in arguments['<windowID>']:
+			if( not strIsInt( windowID ) or not displayManager.windowIDExist( int( windowID ) ) ):
+				continue
 
-			print configuration
+			window = displayManager.getWindow( int( windowID ) )
 
-			if( arguments['<count>'] ):
-				if( strIsInt( arguments['<count>'] ) ):
-					windowCount = int( arguments['<count>'] )
-				else:
-					self.code = Command._CODE_['BADARG']
-					return
-			else:
-				windowCount = 1
+			if( arguments['--image'] != None ):
+				window.setImage( config['IMAGE'] )
 
-			for i in xrange( 0, windowCount ):
-				commandManager['DISPLAY'].createWindow( configuration )
+			if( arguments['--randomizePosition'] != None ):
+				window.setRandomPosition( config['RANDOMIZEPOS'] )
+
+			if( arguments['--title'] != None ):
+				window.setTitle( config['TITLE'] )
+
+			valid += 1
+
+		if not valid:
+			self.code = Command._CODE_['BADARG']
+			self.output += 'Aucunes des fenêtres n\'existe !'
+		else:
+			self.code = Command._CODE_['OK']
+			self.output += 'Changement appliquée(s)'
+
+			if( valid < len( arguments['<windowID>'] ) ):
+				self.output += ', à l\'exception des fenêtres inexistantes'
+
+	def close( self, arguments, displayManager ):
+		windowList = displayManager.getWindowIDList() if( arguments['all'] ) else arguments['<windowID>']
+		valid = 0
+
+		for windowID in windowList:
+			if strIsInt( windowID ) and displayManager.closeWindow( int( windowID ) ):
+				valid += 1
+
+		if( not valid ):
+			self.code = Command._CODE_['BADARG']
+		else:
+			self.code = Command._CODE_['OK']
+			self.output += 'Fermeture effectuée(s)'
+
+			if( valid < len( arguments['<windowID>'] ) ):
+				self.output += ', à l\'exception des fenêtres inexistantes'
