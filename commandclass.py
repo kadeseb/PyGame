@@ -9,12 +9,14 @@
 from docopt import docopt, DocoptExit
 from functions import *
 import subprocess
+import re
 
 # //////////// #
 # Classe mère  #
 # //////////// #
 class Command:
     _FORMAT_ = 'Usage: $CMD'
+    _DESCRIBTION_ = 'Aucune description'
     _CODE_ = {
     	'OK': 0,
     	'BADCMD': 1,
@@ -38,7 +40,7 @@ class Command:
 
     def __execute__( self, _args_, _ctx_ ):
         try:
-            _args_ = docopt( self._FORMAT_, argv=_args_, options_first=False )
+            _args_ = docopt( self._FORMAT_, argv=_args_, options_first=False, help=False )
         except DocoptExit:
             self.code = Command._CODE_[ 'BADARG' ]
             self.output = self._FORMAT_
@@ -75,6 +77,34 @@ class Command:
     def action( self, commandManager ):
     	print 'OK'
 
+    # Retourne une instance de la classe spécifié
+    #
+    # -?-
+    # [~Command] / [None]
+    def _getObjectFromClassName( self, className, commandName ):
+        if( not re.match( '^\w+$', className ) ):
+            return None
+
+        try:
+            return eval( className + '( "%s" )' % commandName )
+        except NameError:
+            print 'name error'
+            return None
+
+    # Reoune la description
+    #
+    # -?-
+    # [str]
+    def _getDescribtion( self ):
+        return self._DESCRIBTION_
+
+    # Retourne l'usage d'une commande:
+    #
+    # -?-
+    # [str]
+    def _getFormat( self ):
+        return self._FORMAT_
+
 # //////////// #
 
 # ==
@@ -82,6 +112,8 @@ class Command:
 # Crée le:  09/19/2016
 # ==
 class Command_Quit( Command ):
+    _DESCRIBTION_ = 'Quitte le programme'
+
     def action( self, _args_, _ctx_):
         _ctx_['EXITING'] = True
     	self.addIOutput( 'Arrêt du serveur' )
@@ -92,11 +124,50 @@ class Command_Quit( Command ):
 # Crée le:  09/19/2016
 # ==
 class Command_Help( Command ):
-    def action( self, _args_, _ctx_ ):
-        self.addOutput( '-> Liste des commandes' )
+    _DESCRIBTION_ = 'Affiche l\'aide'
+    _FORMAT_ =  'Usage: $CMD [<command>]'
 
-        for command in _ctx_['COMMAND']:
-            self.addOutput( command )
+    def action( self, _args_, _ctx_ ):
+        if( _args_['<command>'] ):
+            self.commandUsage( _args_['<command>'], _ctx_ )
+        else:
+            self.listCommand( _ctx_ )
+
+    # Affiche la façpon du(iliser une commande)
+    #
+    # -?-
+    # [str] command:    Command
+    def commandUsage( self, command, _ctx_ ):
+        try:
+            commandClass = _ctx_['COMMAND'][ command ]
+        except KeyError:
+            self.setCode( 'BADARG' )
+            return
+
+        commandName = command
+        commandObject = self._getObjectFromClassName( commandClass, commandName )
+
+        self.addOutput( commandObject._getDescribtion() )
+        self.addOutput( '' )
+        self.addOutput( commandObject._getFormat() )
+        self.setCode( 'OK' )
+
+    # Affiche la liste des commandes#
+    # -?-
+    # [dict] _ctx_:     Contexte d'exécution
+    def listCommand( self, _ctx_ ):
+        self.addOutput( 'Tappez "help [<command>]" pour obtenir l\'aide détaillée d\'une commande' )
+        self.addOutput( '' )
+        self.addOutput( '[Commande]\t[Description]' )
+
+        commandList = _ctx_['COMMAND'].keys()
+
+        for i in xrange( 0, len( _ctx_['COMMAND'] ) ):
+            className = _ctx_['COMMAND'][ commandList[ i ] ]
+            command = commandList[ i ]
+            commandObject = self._getObjectFromClassName( className, command )
+
+            self.addOutput( '%s\t%s' % ( command, commandObject._getDescribtion() ) )
 
         self.setCode( 'OK' )
 
@@ -105,6 +176,8 @@ class Command_Help( Command ):
 # Crée le:  15/10/2016
 # ===
 class Command_Eject( Command ):
+    _DESCRIBTION_ = 'Ouvre le lecteur CD'
+
     def action( self, _args_, _ctx_ ):
         subprocess.Popen( 'eject' )
         self.addIOutput( 'Lecteur CD ouvert'  )
@@ -119,6 +192,8 @@ class Command_Sound( Command ):
     _FORMAT_ += '	$CMD list\n'
     _FORMAT_ += '	$CMD play <id> [<count>] [<delais>]\n'
     _FORMAT_ += '	$CMD purge'
+
+    _DESCRIBTION_ = "Gère les sons"
 
     def action( self, _args_, _ctx_ ):
         self.soundManager = _ctx_['SOUND']
@@ -195,15 +270,17 @@ class Command_Sound( Command ):
 # ==
 class Command_Window( Command ):
     _FORMAT_ = 	'Usage: \n'
-    _FORMAT_ += '	$CMD list (image | window)\n'
-    _FORMAT_ += '	$CMD create [options] [<count>]\n'
-    _FORMAT_ += '	$CMD set [options] <windowID>... \n'
-    _FORMAT_ += '	$CMD close [all | (<windowID>...)]\n'
+    _FORMAT_ += '	$CMD list (image | window)            Liste les fenêtres ou images\n'
+    _FORMAT_ += '	$CMD create [options] [<count>]       Ouvre une fenêtre\n'
+    _FORMAT_ += '	$CMD set [options] <windowID>...      Change les propriétés d\'une fenêtre\n'
+    _FORMAT_ += '	$CMD close [all | (<windowID>...)]    Fermeture de fenêtre\n'
     _FORMAT_ += '\n'
     _FORMAT_ += 'Options:\n'
-    _FORMAT_ += '-r=(1 | 0) --randomizePosition=(1 | 0)	Position de la fenêtre aléatoire\n'
-    _FORMAT_ += '-i=IMAGE --image=IMAGE 		Image de la fênetre\n'
-    _FORMAT_ += '-t=TITLE --title=TITLE 		Titre de la fênetre'
+    _FORMAT_ += '-r=(1 | 0) --randomizePosition=(1 | 0)	  Position de la fenêtre aléatoire\n'
+    _FORMAT_ += '-i=IMAGE --image=IMAGE 		          Image de la fenêtre\n'
+    _FORMAT_ += '-t=TITLE --title=TITLE 		          Titre de la fenêtre'
+
+    _DESCRIBTION_ = "Gère l\'afichage de fenêtre"
 
     def action( self, _args_, _ctx_ ):
     	# Liste des images/fenêtre

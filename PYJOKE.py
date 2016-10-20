@@ -9,8 +9,6 @@
 import command
 
 commandManager = command.Manager()
-commandManager.associate( 'quit', 'Command_Quit' )
-commandManager.associate( 'help', 'Command_Help' )
 commandManager.associate( 'eject', 'Command_Eject' )
 commandManager.associate( 'sound', 'Command_Sound' )
 commandManager.associate( 'window', 'Command_Window' )

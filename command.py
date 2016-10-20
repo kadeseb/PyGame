@@ -15,7 +15,10 @@ from commandclass import *
 from config import *
 
 class Manager:
-	COMMAND = {}
+	COMMAND = {
+		'quit':'Command_Quit',
+		'help':'Command_Help'
+	}
 	COMMAND_STATE = {
 		'AWAITING': 0,
 		'PERFORMED': 1
@@ -110,9 +113,7 @@ class Manager:
 			command = container['COMMAND'].split()
 
 			if( len( command ) and command[0] in self.COMMAND ):
-				call = self.COMMAND[ command[0] ] + '( "%s" )' % command[0]
-				commandObject = eval( call )
-
+				commandObject = self._getObjectFromName(command[0] )
 				commandObject.__execute__( command[1:], self._CTX_ )
 				container['RESULT'] = commandObject.__result__()
 			else:
@@ -130,4 +131,19 @@ class Manager:
 
 	# Retourne l'état du programme
 	def exiting( self ):
-		return self._CTX_['EXITING']
+		return self._CTX_['EXITING' ]
+
+	# Retounr une instance de la classe spécifié
+	#
+	# -?-
+	# [str] name:	Nom de la commande
+	# -!-
+	# [~Command] / [None]
+	def _getObjectFromName( self, name ):
+		if( not re.match( '^\w+$', name ) ):
+			return None
+
+		try:
+			return eval( self.COMMAND[ name ] + '( "%s" )' % name )
+		except NameError:
+			return None
