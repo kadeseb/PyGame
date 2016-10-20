@@ -3,54 +3,61 @@
 # ----------------------------------------
 # Projet:	PyBlague
 # Rôle:		Gestion des commandes
-# Auteur:	kadeseb
 # Crée le:	09/10/2016
 # ----------------------------------------
-from commandclass import *
-import subprocess
+import re
+import random
 import bank as Bank
 import display as Display
-from Tkinter import *
 import sound as Sound
-import random
 from functions import *
+from commandclass import *
+from config import *
 
 class Manager:
-	COMMAND = {
-		'quit': 'Command_Quit',
-		'eject': 'Command_Eject',
-		'help': 'Command_Help',
-		'sound': 'Command_Sound',
-		'window': 'Command_Window'
-	}
-
+	COMMAND = {}
 	COMMAND_STATE = {
 		'AWAITING': 0,
 		'PERFORMED': 1
 	}
 
-	COMMAND_CODE = {
-		'OK': 0,
-		'BADCMD': 1,
-		'BADARG': 2,
-		'NOTFOUND': 3
-	}
-
 	# Constructeur
 	def __init__( self ):
-		self._ENV_ = {
+		self._CTX_ = {
 			'DISPLAY': Display.Manager(),
 			'SOUND': Sound.Manager(),
-			'EXITING': False
+			'EXITING': False,
+			'COMMAND': self.COMMAND
 		}
+
 		self.commandQueue = {}
 
-	# Envoie une commande dans la liste d'exécution
+	# Associe une nouvelle commande
+	#
 	# -?-
-	# [string] command:		Commande à envoyer
+	# [str] command: 	Commande
+	# [str] class: 		Classe de la commande
+	# -!-
+	# [bool]
+	def associate( self, command, classCMD ):
+		if( ( not re.match( '^\w+$', command ) ) or ( not re.match( '^\w+$', classCMD ) ) ):
+			return False
+
+		try:
+			eval( classCMD )
+		except NameError:
+			return False
+
+		self.COMMAND[ command ] = classCMD
+		return True
+
+	# Envoie une commande dans la liste d'exécution
+	#
+	# -?-
+	# [str] command:		Commande à envoyer
 	# -!-
 	# [str]					Identifiant unique de la commande
-	def send( self, command ):
+	def put( self, command ):
 		while True:
 			commandID = self.generateID()
 
@@ -66,8 +73,10 @@ class Manager:
 		return commandID
 
 	# Renvoie le résultat d'une commande
+	#
 	# -?-
 	# [string] commandID:	ID de la commande ciblé
+	#
 	# -!-
 	# [dict] / None 		Résulat de la commande
 	def get( self, commandID ):
@@ -75,23 +84,28 @@ class Manager:
 			container = self.commandQueue[ commandID ]
 
 			if( container['STATE'] == Manager.COMMAND_STATE['PERFORMED'] ):
-				result = self.commandQueue.pop( commandID )['RESULT']
-				return result
+				return self.commandQueue.pop( commandID )['RESULT']
 			else:
 				return None
+		else:
+			return None
 
+	# Génère un identifiant de commande
+	#
+	# -!-
+	# [str]
 	def generateID( self ):
 		charList = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-		size = 8
 		id = ''
 
-		for i in xrange( 0, size ):
+		for i in xrange( 0, CONFIG['CMDIDSIZE'] ):
 			id += charList[ random.randrange( 0, len( charList ) ) ]
 
 		return id
 
-	# Execute les commandes en attente
-	def performCommand( self ):
+	# Effectue les actions en attente
+	def action( self ):
+		# Commande en attente
 		for identifiant, container in self.commandQueue.iteritems():
 			command = container['COMMAND'].split()
 
@@ -99,7 +113,7 @@ class Manager:
 				call = self.COMMAND[ command[0] ] + '( "%s" )' % command[0]
 				commandObject = eval( call )
 
-				commandObject.__execute__( command[1:], self._ENV_ )
+				commandObject.__execute__( command[1:], self._CTX_ )
 				container['RESULT'] = commandObject.__result__()
 			else:
 				container['RESULT'] = {
@@ -110,11 +124,10 @@ class Manager:
 
 			container['STATE'] = Manager.COMMAND_STATE['PERFORMED']
 
-	# Effectue des actions
-	def action( self ):
-		self.performCommand()
+		# Mise à jour des autres gestionnaires
+		self._CTX_['SOUND'].performPlaylist()
+		self._CTX_['DISPLAY'].update()
 
-		# Autres gestionnaires
-		self._ENV_['SOUND'].performPlaylist()
-
-		#self.displayManager.update()
+	# Retourne l'état du programme
+	def exiting( self ):
+		return self._CTX_['EXITING']

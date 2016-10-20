@@ -9,15 +9,20 @@
 import command
 
 commandManager = command.Manager()
+commandManager.associate( 'quit', 'Command_Quit' )
+commandManager.associate( 'help', 'Command_Help' )
+commandManager.associate( 'eject', 'Command_Eject' )
+commandManager.associate( 'sound', 'Command_Sound' )
+commandManager.associate( 'window', 'Command_Window' )
 
 print '******************************'
 print '* PyJoke [LocalVersion V2.0] *'
 print '******************************'
 
-while not commandManager._ENV_['EXITING']:
+while not commandManager.exiting():
     command = raw_input( '#> ' )
 
-    commandID = commandManager.send( command )
+    commandID = commandManager.put( command )
     print '[%s] Commande envoyé' % commandID
 
     commandManager.action()

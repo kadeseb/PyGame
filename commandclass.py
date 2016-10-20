@@ -20,7 +20,8 @@ class Command:
     	'BADCMD': 1,
     	'BADARG': 2,
     	'NOTFOUND': 3,
-    	'INVALIDCODE': 4
+    	'INVALIDCODE': 4,
+        'UNKNOW': 5
     }
     _CODE_STATUS_ =  {
     	0: "OK",
@@ -35,15 +36,15 @@ class Command:
     	self.code = Command._CODE_[ 'OK' ]
     	self.output = ''
 
-    def __execute__( self, args, commandManager ):
+    def __execute__( self, _args_, _ctx_ ):
         try:
-            args = docopt( self._FORMAT_, argv=args, options_first=False )
+            _args_ = docopt( self._FORMAT_, argv=_args_, options_first=False )
         except DocoptExit:
             self.code = Command._CODE_[ 'BADARG' ]
             self.output = self._FORMAT_
             return
 
-        self.action( args, commandManager )
+        self.action( _args_, _ctx_ )
 
     def __result__( self ):
         if( self.code in Command._CODE_STATUS_ ):
@@ -81,8 +82,8 @@ class Command:
 # Crée le:  09/19/2016
 # ==
 class Command_Quit( Command ):
-    def action( self, _args_, _ctx_ ):
-    	_ctx_['EXITING'] = True
+    def action( self, _args_, _ctx_):
+        _ctx_['EXITING'] = True
     	self.addIOutput( 'Arrêt du serveur' )
         self.setCode( 'OK' )
 
@@ -92,7 +93,11 @@ class Command_Quit( Command ):
 # ==
 class Command_Help( Command ):
     def action( self, _args_, _ctx_ ):
-        self.addIOutput( 'Affiche l\'aide' )
+        self.addOutput( '-> Liste des commandes' )
+
+        for command in _ctx_['COMMAND']:
+            self.addOutput( command )
+
         self.setCode( 'OK' )
 
 # ===
@@ -116,19 +121,18 @@ class Command_Sound( Command ):
     _FORMAT_ += '	$CMD purge'
 
     def action( self, _args_, _ctx_ ):
+        self.soundManager = _ctx_['SOUND']
+
         if( _args_['list'] ):
-            self.list( _ctx_['SOUND'] )
+            self.list()
         elif( _args_['play'] ):
-            self.play( _args_, _ctx_['SOUND'] )
+            self.play( _args_ )
         elif( _args_['purge'] ):
-            self.purge( _ctx_['SOUND'] )
+            self.purge()
 
     # Sort la liste des sons
-    #
-    # -?-
-    # [sound.Manager] soundManager: Gestionnaires de sons
-    def list( self, soundManager ):
-        soundList = commandManager['SOUND'].getSoundList()
+    def list( self ):
+        soundList = self.soundManager.getSoundList()
 
         self.output += 'Liste des sons:\n'
         self.output += '[ID]\t[Fichier]'
@@ -143,9 +147,9 @@ class Command_Sound( Command ):
     # -?-
     # [dict] _args_
     # [sound.Manager] soundManager: Gestionnaires de sons
-    def play( self, _args_, soundManager ):
+    def play( self, _args_ ):
         # ID du son
-        if( not commandManager['SOUND'].validSound( _args_['<id>'] ) ):
+        if( not self.soundManager.validSound( _args_['<id>'] ) ):
             self.code = Command._CODE_['NOTFOUND']
             self.output = 'Le son spécifié n\'existe pas !'
             return
@@ -173,7 +177,7 @@ class Command_Sound( Command ):
             delais = 0
 
         for i in xrange( 0, count ):
-            commandManager['SOUND'].playlistAdd( soundID, delais )
+            self.soundManager.playlistAdd( soundID, delais )
 
         self.code = Command._CODE_['OK']
 
@@ -181,8 +185,8 @@ class Command_Sound( Command ):
     #
     # -?-
     # [sound.Manager] soundManager: Gestionnaires de sons
-    def purge( self, soundManager ):
-        soundManager.playlistPurge()
+    def purge( self ):
+        self.soundManager.playlistPurge()
         self.code = Command._CODE_['OK']
 
 # ==

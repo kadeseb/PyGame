@@ -15,5 +15,6 @@ CONFIG = {
 	'IMAGES_DIR': 'img/',
 	'SOUNDS_DIR': 'sound/',
 	'PORT': 2048,
-	'TIMEOUT': 5
+	'TIMEOUT': 5,
+	'CMDIDSIZE': 8
 }
