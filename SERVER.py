@@ -2,29 +2,31 @@
 # -*- coding: utf-8 -*-
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
-# Projet:	PyBlague
+# ========================================
+# Projet:	PyJoke
+# Rôle:		Lance le serveur PyJoke
 # Auteur:	kadeseb
 # Crée le:	09/10/2016
-# ----------------------------------------
-import os
-import pygame.mixer as Mixer
-# ---
-import config
-import network as Network
-import action
+# ========================================
+if __name__ == '__main__':
+	print '======================'
+	print '= PyJoke Server [v2] ='
+	print '======================'
 
-##################
-# Initialisation #
-##################
-# Pygame Mixer
-Mixer.init()
-print '***********************'
-print '* PyBlague Serveur v1 *'
-print '***********************'
-manager = action.Manager()
-server = Network.Server( manager )
-server.start()
+	import network as Network
+	import command as Command
 
-while not manager.askExit():
-	manager.action()
+	############################
+	# Gestionnaire de commande #
+	############################
+	manager = Command.Manager()
+	manager.associate( 'eject', 'Command_Eject' )
+	manager.associate( 'sound', 'Command_Sound' )
+	manager.associate( 'window', 'Command_Window' )
+	manager.start()
+
+	###########
+	# Serveur #
+	###########
+	server = Network.Server( manager )
+	server.start()

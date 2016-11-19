@@ -40,7 +40,7 @@ class Command:
 
     def __execute__( self, _args_, _ctx_ ):
         try:
-            _args_ = docopt( self._FORMAT_, argv=_args_, options_first=False, help=False )
+            _args_ = docopt( self._FORMAT_, argv=_args_, options_first=True, help=False )
         except DocoptExit:
             self.code = Command._CODE_[ 'BADARG' ]
             self.output = self._FORMAT_

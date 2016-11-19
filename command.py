@@ -1,10 +1,11 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
-# Projet:	PyBlague
+# ========================================
+# Projet:	PyJoke
 # Rôle:		Gestion des commandes
 # Crée le:	09/10/2016
-# ----------------------------------------
+# ========================================
+from threading import Thread, RLock
 import re
 import random
 import bank as Bank
@@ -14,7 +15,9 @@ from functions import *
 from commandclass import *
 from config import *
 
-class Manager:
+lock = RLock()
+
+class Manager( Thread ):
 	COMMAND = {
 		'quit':'Command_Quit',
 		'help':'Command_Help'
@@ -26,6 +29,8 @@ class Manager:
 
 	# Constructeur
 	def __init__( self ):
+		Thread.__init__( self )
+
 		self._CTX_ = {
 			'DISPLAY': Display.Manager(),
 			'SOUND': Sound.Manager(),
@@ -34,8 +39,14 @@ class Manager:
 		}
 
 		self.commandQueue = {}
+		self.commandResult = {}
 
-	# Associe une nouvelle commande
+	# Lancement du thread
+	def run( self ):
+		while not self.exiting():
+			self.action()
+
+	# Créer une association entre une commande et une classse
 	#
 	# -?-
 	# [str] command: 	Commande
@@ -61,19 +72,19 @@ class Manager:
 	# -!-
 	# [str]					Identifiant unique de la commande
 	def put( self, command ):
-		while True:
-			commandID = self.generateID()
+		with lock:
+			while True:
+				commandID = randomAlphaNumStr( CONFIG['SALTSIZE'] )
 
-			if not commandID in self.commandQueue:
-				break
+				if not commandID in self.commandQueue:
+					break
 
-		self.commandQueue[ commandID ] =  {
-				'COMMAND': command,
-				'STATE': Manager.COMMAND_STATE['AWAITING'],
-				'RESULT': None
-			}
+			self.commandQueue[ commandID ] =  {
+					'COMMAND': command,
+					'STATE': Manager.COMMAND_STATE['AWAITING']
+				}
 
-		return commandID
+			return commandID
 
 	# Renvoie le résultat d'une commande
 	#
@@ -83,57 +94,58 @@ class Manager:
 	# -!-
 	# [dict] / None 		Résulat de la commande
 	def get( self, commandID ):
-		if( commandID in self.commandQueue ):
-			container = self.commandQueue[ commandID ]
+		if( not isinstance( commandID, str ) ):
+			raise TypeError
+
+		with lock:
+			try:
+				container = self.commandQueue[ commandID ]
+			except KeyError:
+				return None
 
 			if( container['STATE'] == Manager.COMMAND_STATE['PERFORMED'] ):
-				return self.commandQueue.pop( commandID )['RESULT']
+				self.commandQueue.pop( commandID )
+				return self.commandResult.pop( commandID )
 			else:
 				return None
-		else:
-			return None
-
-	# Génère un identifiant de commande
-	#
-	# -!-
-	# [str]
-	def generateID( self ):
-		charList = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-		id = ''
-
-		for i in xrange( 0, CONFIG['CMDIDSIZE'] ):
-			id += charList[ random.randrange( 0, len( charList ) ) ]
-
-		return id
 
 	# Effectue les actions en attente
 	def action( self ):
-		# Commande en attente
-		for identifiant, container in self.commandQueue.iteritems():
-			command = container['COMMAND'].split()
+		with lock:
+			# Commande en attente
+			for identifiant, container in self.commandQueue.iteritems():
+				command = container['COMMAND'].split()
 
-			if( len( command ) and command[0] in self.COMMAND ):
-				commandObject = self._getObjectFromName(command[0] )
-				commandObject.__execute__( command[1:], self._CTX_ )
-				container['RESULT'] = commandObject.__result__()
-			else:
-				container['RESULT'] = {
-					'CODE': Command._CODE_['BADCMD'],
-					'STATUS': Command._CODE_STATUS_[ Command._CODE_['BADCMD'] ],
-					'OUTPUT': ''
-				}
+				if( container['STATE'] == Manager.COMMAND_STATE['PERFORMED'] ):
+					continue
 
-			container['STATE'] = Manager.COMMAND_STATE['PERFORMED']
+				if( len( command ) and command[0] in self.COMMAND ):
+					commandObject = self._getObjectFromName(command[0] )
+					commandObject.__execute__( command[1:], self._CTX_ )
 
-		# Mise à jour des autres gestionnaires
-		self._CTX_['SOUND'].performPlaylist()
-		self._CTX_['DISPLAY'].update()
+					self.commandResult[ identifiant ] = commandObject.__result__()
+				else:
+					self.commandResult[ identifiant ] = {
+						'CODE': Command._CODE_['BADCMD'],
+						'STATUS': Command._CODE_STATUS_[ Command._CODE_['BADCMD'] ],
+						'OUTPUT': ''
+					}
+
+				container['STATE'] = Manager.COMMAND_STATE['PERFORMED']
+
+			# Mise à jour des autres gestionnaires
+			self._CTX_['SOUND'].performPlaylist()
+			self._CTX_['DISPLAY'].update()
 
 	# Retourne l'état du programme
 	def exiting( self ):
 		return self._CTX_['EXITING' ]
 
-	# Retounr une instance de la classe spécifié
+	# Demande l'arrêt du programme
+	def quit( self ):
+		self._CTX_['EXITING'] = True
+
+	# Retoune une instance de la classe spécifié
 	#
 	# -?-
 	# [str] name:	Nom de la commande
