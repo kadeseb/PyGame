@@ -1,0 +1,8 @@
+{
+  "PORT": 2048,
+  "PASSWORD": "password",
+  "CMDIDSIZE": 8,
+  "SALTSIZE": 10,
+  "IMAGES_DIR": "img/",
+  "SOUNDS_DIR": "sound/"
+}
