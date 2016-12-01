@@ -33,7 +33,7 @@ class Manager( Thread ):
 
 	# Constructeur
 	def __init__( self ):
-		Thread.__init__( self )
+		#Thread.__init__( self )
 
 		self._CTX_ = {
 			'DISPLAY': Display.Manager(),

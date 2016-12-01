@@ -20,10 +20,11 @@ if __name__ == '__main__':
 	# Gestionnaire de commande #
 	############################
 	manager = Command.Manager()
-	manager.start()
 
 	###########
 	# Serveur #
 	###########
 	server = Network.Server( manager )
 	server.start()
+
+	manager.run()
