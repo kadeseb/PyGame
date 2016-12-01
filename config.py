@@ -7,6 +7,8 @@
 # ========================================
 import json
 
+DEBUG = False
+
 class Configuration:
 	# Charge le fichier de configuration
 	#
@@ -18,22 +20,22 @@ class Configuration:
 		if( not isinstance( configFile, str ) ):
 			raise TypeError( '<configFile> n\'est pas de type [str] !' )
 
-		print '| Lecture du fichier de configuration (%s)...' % ( configFile )
+		if DEBUG: print '| Lecture du fichier de configuration (%s)...' % ( configFile )
 		try:
 			configFile = open( 'config.json', 'r' )
 			configStr = configFile.read()
 		except IOError:
 			print '$ Erreur: Impossible d\'accéder au fichier de configuration'
 			raise SystemError()
-		print '$ Ok'
+		if DEBUG: print '$ Ok'
 
-		print '| Extraction des informations de configuration...'
+		if DEBUG: print '| Extraction des informations de configuration...'
 		try:
 			self.config = json.loads( configStr )
 		except TypeError:
 			print '$ Erreur: Le fichier est invalide !'
 			raise SystemError( 'Impossible de charger le fichier de configuration !' )
-		print '$ Ok'
+		if DEBUG: print '$ Ok'
 
 	def get( self ):
 		return self.config

@@ -27,7 +27,7 @@ class Server( threading.Thread ):
 		threading.Thread.__init__( self )
 
 		# Création du socket
-		print '| Création du socket'
+		if DEBUG: print '| Création du socket'
 		try:
 			self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 			self.socket.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
@@ -38,14 +38,14 @@ class Server( threading.Thread ):
 		except socket.error:
 			print '$ ERREUR: La création du socket à échoué !'
 			raise SystemError()
-		print '$ Ok'
+		if DEBUG: print '$ Ok'
 
 		# Initialisation de l'objet
 		self.clientSessionList = []
 		self.manager = manager
 
 		print '| Serveur en écoute sur %d\n' % CONFIG['PORT']
-		print ' '
+		print '-'*10 + 'JOURNAL' + '-'*10
 
 	# Met le serveur en état d'écoute
 	def listen( self ):
@@ -78,6 +78,7 @@ class ServerSession( threading.Thread ):
 	def __init__( self, ip, port, clientsocket, manager ):
 		threading.Thread.__init__( self )
 
+		self.disconnect = False
 		self.authentified = False
 		self.clientsocket = clientsocket
 		self.ip = ip
@@ -86,14 +87,12 @@ class ServerSession( threading.Thread ):
 
 	# Lance le thread
 	def run( self ):
-		print '[+]{ %s:%d } Connexion d\'un client ' % ( self.ip, self.port )
+		print '[+]{ %s:%d } Connexion' % ( self.ip, self.port )
 
 		while not self.manager.exiting():
-			if( not self.authentified ):
-				self.login()
-			else:
-				self.handleRequest()
-
+			if( self.disconnect ): 			break;
+			elif( not self.authentified ): 	self.login()
+			else: 							self.handleCommand()
 		print '[+]{ %s:%d } Déconnexion' % ( self.ip, self.port )
 		self.clientsocket.close()
 
@@ -103,7 +102,7 @@ class ServerSession( threading.Thread ):
 	# [dict] request:	Requête
 	# -!-
 	# [bool]
-	def handleRequest( self ):
+	def handleCommand( self ):
 		# ---------------------------
 		# Récupération de la commande
 		# ---------------------------
@@ -112,8 +111,15 @@ class ServerSession( threading.Thread ):
 
 		try:
 			command = exchange.get( 'COMMAND' )
+			print '[~]{ %s:%d } %s' % ( self.ip, self.port, command )
 		except KeyError:
 			return False
+
+		'''
+		<!> Penser à implémenter ça de façon moins deg
+		'''
+		if( command == 'exit' ):
+			self.disconnect = True
 
 		# ************************
 		# Execution de la commande
@@ -176,9 +182,9 @@ class ServerSession( threading.Thread ):
 
 		if( validPassword ):
 			self.authentified = True
-			print '[#]{ %s:%d } Authentification réussie !' % ( self.ip, self.port )
+			print '[#]{ %s:%d } Authentification réussie' % ( self.ip, self.port )
 		else:
-			print '[#]{ %s:%d } Authentification échoué !' % ( self.ip, self.port )
+			print '[#]{ %s:%d } Authentification échoué' % ( self.ip, self.port )
 
 
 #######################
@@ -271,6 +277,9 @@ class ClientSession:
 		if( not self.connected or not self.authentified ):
 			return False
 
+		if( command == 'quit' or command == 'exit' ):
+			self.connected = False
+
 		exchange = Exchange()
 
 		# ---------------------
@@ -292,3 +301,6 @@ class ClientSession:
 			}
 		except KeyError:
 			return False
+
+	def connectionClosed( self ):
+		return not self.connected

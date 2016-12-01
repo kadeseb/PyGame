@@ -19,8 +19,12 @@ lock = RLock()
 
 class Manager( Thread ):
 	COMMAND = {
-		'quit':'Command_Quit',
-		'help':'Command_Help'
+		'exit': 'Command_Exit',
+		'quit': 'Command_Quit',
+		'help': 'Command_Help',
+		'sound': 'Command_Sound',
+		'eject': 'Command_Eject',
+		'window': 'Command_Window'
 	}
 	COMMAND_STATE = {
 		'AWAITING': 0,
@@ -35,7 +39,8 @@ class Manager( Thread ):
 			'DISPLAY': Display.Manager(),
 			'SOUND': Sound.Manager(),
 			'EXITING': False,
-			'COMMAND': self.COMMAND
+			'COMMAND': self.COMMAND,
+			'DISCONNECT': False
 		}
 
 		self.commandQueue = {}
@@ -53,6 +58,7 @@ class Manager( Thread ):
 	# [str] class: 		Classe de la commande
 	# -!-
 	# [bool]
+	'''
 	def associate( self, command, classCMD ):
 		if( ( not re.match( '^\w+$', command ) ) or ( not re.match( '^\w+$', classCMD ) ) ):
 			return False
@@ -64,6 +70,7 @@ class Manager( Thread ):
 
 		self.COMMAND[ command ] = classCMD
 		return True
+	'''
 
 	# Envoie une commande dans la liste d'exécution
 	#
@@ -126,7 +133,6 @@ class Manager( Thread ):
 					self.commandResult[ identifiant ] = commandObject.__result__()
 				else:
 					self.commandResult[ identifiant ] = {
-						'CODE': Command._CODE_['BADCMD'],
 						'STATUS': Command._CODE_STATUS_[ Command._CODE_['BADCMD'] ],
 						'OUTPUT': ''
 					}

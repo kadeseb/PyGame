@@ -55,15 +55,11 @@ if __name__ == '__main__':
 	##########################
 	# Saisie du mot de passe #
 	##########################
-	print '****************************'
-	print '* Authentification requise *'
-	print '****************************'
 	password = getpass.getpass( 'Mot de passe: ' )
 
 	if( session.login( password ) ):
-		print '****************************'
-		print '! Authentification réussie !'
-		print '****************************'
+		print 'Authentification réussie !'
+		print '=========================='
 	else:
 		print 'Mot de passe invalide !'
 		exit( 0 )
@@ -78,6 +74,9 @@ if __name__ == '__main__':
 
 			for line in response['OUTPUT'].split( '\n' ):
 				print '| ', line
+
+			if( session.connectionClosed() ):
+				exit( 0 )
 		except KeyboardInterrupt:
 			print 'Stop'
 			exit( 0 )

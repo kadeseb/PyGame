@@ -20,9 +20,6 @@ if __name__ == '__main__':
 	# Gestionnaire de commande #
 	############################
 	manager = Command.Manager()
-	manager.associate( 'eject', 'Command_Eject' )
-	manager.associate( 'sound', 'Command_Sound' )
-	manager.associate( 'window', 'Command_Window' )
 	manager.start()
 
 	###########

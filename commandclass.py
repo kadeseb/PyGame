@@ -108,8 +108,19 @@ class Command:
 # //////////// #
 
 # ==
+# Rôle:     Déconnecte le client
+# Crée le:  01/12/2016
+# ==
+class Command_Exit( Command ):
+    _DESCRIBTION_ = 'Déconnecte le client'
+
+    def action( self, _args_, _ctx_):
+    	self.addIOutput( 'Vous allez être déconnecté !' )
+        self.setCode( 'OK' )
+
+# ==
 # Rôle:     Arrête le serveur
-# Crée le:  09/19/2016
+# Crée le:  19/09/2016
 # ==
 class Command_Quit( Command ):
     _DESCRIBTION_ = 'Quitte le programme'
@@ -121,7 +132,7 @@ class Command_Quit( Command ):
 
 # ==
 # Rôle:     Affiche l'aide
-# Crée le:  09/19/2016
+# Crée le:  19/09/2016
 # ==
 class Command_Help( Command ):
     _DESCRIBTION_ = 'Affiche l\'aide'
