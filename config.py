@@ -40,19 +40,3 @@ class Configuration:
 
 configuration = Configuration( 'config.json' )
 CONFIG = configuration.get()
-
-CONFIG = {
-	'WINDOWS_NUMBER': 1,
-	'WINDOWS_POSUPDATEINTERVAL': 1000,
-	'WINDOWS_WIDTH': 500,
-	'WINDOWS_HEIGHT': 500,
-	'IMAGES_DIR': 'img/',
-	'SOUNDS_DIR': 'sound/',
-	'PORT': 2048,
-	'TIMEOUT': 5,
-	'CMDIDSIZE': 8,
-	'NTWBUFSIZE': 4096,
-	'SALTSIZE': 10,
-	'LOGINTRYCOUNT': 3,
-	'PASSWORD': 'password'
-}

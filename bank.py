@@ -22,11 +22,13 @@ class ImageBank():
 	def __init__( self ):
 		imageNameList = os.listdir( CONFIG['IMAGES_DIR'] )
 
+		'''
 		if( len( imageNameList ) > CONFIG['WINDOWS_NUMBER'] ):
 			limit = CONFIG['WINDOWS_NUMBER']
 		else:
 			limit = len( imageNameList )
 
+		'''
 		limit = len( imageNameList )
 
 		self.imageList = []

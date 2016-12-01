@@ -6,11 +6,8 @@
 # Auteur:	kadeseb
 # Crée le:	09/10/2016
 # ----------------------------------------
-import sys
-import network as Network
 from docopt import docopt
-from functions import *
-from config import *
+import getpass
 
 format = '''
 Usage:
@@ -24,6 +21,9 @@ if __name__ == '__main__':
 	print '======================'
 	print '= PyJoke Client v1.2 ='
 	print '======================'
+	import network as Network
+	from functions import *
+	from config import *
 
 	arguments = docopt( format, version='PyJoke Client 1.0', options_first=False )
 	hostname = arguments['<serveur>']
@@ -52,16 +52,32 @@ if __name__ == '__main__':
 	else:
 		print '-> Connecté !\n%s' % ( '='*22 )
 
+	##########################
+	# Saisie du mot de passe #
+	##########################
+	print '****************************'
+	print '* Authentification requise *'
+	print '****************************'
+	password = getpass.getpass( 'Mot de passe: ' )
+
+	if( session.login( password ) ):
+		print '****************************'
+		print '! Authentification réussie !'
+		print '****************************'
+	else:
+		print 'Mot de passe invalide !'
+		exit( 0 )
+
 	while True:
 		try:
 			command = raw_input( '#> ' )
 			response = session.sendCommand( command )
+
 			print '| Status:', response['STATUS']
 			print '| ' + '-'*60
 
 			for line in response['OUTPUT'].split( '\n' ):
 				print '| ', line
-
 		except KeyboardInterrupt:
 			print 'Stop'
 			exit( 0 )

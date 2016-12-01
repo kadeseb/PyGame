@@ -1,11 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
-# Projet:	PyBlague
+# ========================================
+# Projet:	PyJoke
 # Rôle:		Gère le réseau
-# Auteur:	kadeseb
 # Crée le:	10/10/2016
-# ----------------------------------------
+# ========================================
 import urllib
 import json
 import socket
@@ -15,6 +14,7 @@ import hashlib
 from config import *
 from command import *
 from functions import *
+from protocol import *
 
 class Server( threading.Thread ):
 	# Démarre le serveur
@@ -86,22 +86,15 @@ class ServerSession( threading.Thread ):
 
 	# Lance le thread
 	def run( self ):
-		print '[+]{ %s: %d } Connexion d\'un client ' % ( self.ip, self.port )
+		print '[+]{ %s:%d } Connexion d\'un client ' % ( self.ip, self.port )
 
 		while not self.manager.exiting():
-			try:
-				request = self.clientsocket.recv( CONFIG['NTWBUFSIZE'] )
+			if( not self.authentified ):
+				self.login()
+			else:
+				self.handleRequest()
 
-				try:
-					request = json.loads( request )
-				except ValueError:
-					break
-
-				self.handleRequest( request )
-			except socket.error:
-				break
-
-		print '[+]{ %s: %d } Déconnexion' % ( self.ip, self.port )
+		print '[+]{ %s:%d } Déconnexion' % ( self.ip, self.port )
 		self.clientsocket.close()
 
 	# Analyse la requête
@@ -110,87 +103,192 @@ class ServerSession( threading.Thread ):
 	# [dict] request:	Requête
 	# -!-
 	# [bool]
-	def handleRequest( self, request ):
-		if( not 'CODE' in request and not 'DATA' in request  ):
+	def handleRequest( self ):
+		# ---------------------------
+		# Récupération de la commande
+		# ---------------------------
+		exchange = Exchange()
+		exchange.recv( self.clientsocket )
+
+		try:
+			command = exchange.get( 'COMMAND' )
+		except KeyError:
 			return False
 
-		cmdID = self.manager.put( request['DATA'] )
+		# ************************
+		# Execution de la commande
+		# ************************
+		commandID = self.manager.put( command )
+		result = None
 
-		while True:
-			response = self.manager.get( cmdID )
+		while not result:
+			result = self.manager.get( commandID )
 
-			if( response ):
-				cmdOutput = json.dumps( response )
-				self.clientsocket.send( cmdOutput )
-				break
+		# -------------------
+		# Envoie de la sortie
+		# -------------------
+		exchange.purge()
+		exchange.add( 'MODE', 'COMMANDRESPONSE' )
+		exchange.add( 'STATUS', result['STATUS'] )
+		exchange.add( 'OUTPUT', result['OUTPUT'] )
+		exchange.send( self.clientsocket )
+
+		return True
+
+	def login( self ):
+		exchange = Exchange()
+
+		# ----------------------------------
+		# Récupération de la demande de salt
+		# ----------------------------------
+		exchange.recv( self.clientsocket )
+
+		# --------------
+		# Envoie du salt
+		# --------------
+		salt = randomAlphaNumStr( CONFIG['SALTSIZE'] )
+
+		exchange.purge()
+		exchange.add( 'MODE', 'SENDSALT' )
+		exchange.add( 'SALT', salt )
+		exchange.send( self.clientsocket )
+
+		# ---------------------------------
+		# Récupération du mot de passe salé
+		# ---------------------------------
+		exchange.recv( self.clientsocket )
+
+		try:
+			saltedPass = exchange.get( 'PASS' )
+		except KeyError:
+			return False
+
+		# ----------------
+		# Envoie du status
+		# ----------------
+		validSaltedPass = hashlib.sha1( CONFIG['PASSWORD'] + salt ).hexdigest()
+		validPassword = saltedPass == validSaltedPass
+
+		exchange.purge()
+		exchange.add( 'MODE', 'LOGINSTATUS' )
+		exchange.add( 'STATUS', validPassword )
+		exchange.send( self.clientsocket )
+
+		if( validPassword ):
+			self.authentified = True
+			print '[#]{ %s:%d } Authentification réussie !' % ( self.ip, self.port )
+		else:
+			print '[#]{ %s:%d } Authentification échoué !' % ( self.ip, self.port )
+
 
 #######################
 # Session côté client #
 #######################
 class ClientSession:
-    def __init__( self ):
-        self.password = None
-        self.connected = False
-        self.loged = False
+	def __init__( self ):
+		self.password = None
+		self.connected = False
+		self.authentified = False
 
-    # Se connecte à un serveur
-    #
-    # -?-
-    # [str] hostname
-    # [int] port
-    # -!-
-    # [bool]
-    def connect( self, hostname, port ):
-        if( not portIsValid( port ) ):
-            return False
-
-        try:
-            self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-            self.socket.settimeout( CONFIG['TIMEOUT'] )
-            self.socket.connect( (hostname, port) )
-        except socket.error:
-            self.connected = False
-            return False
-
-        self.connected = True
-        return True
-
-    # S'identifie auprès du serveur
-    #
-    # -?-
-    # [str] password:   Mot de passe
-    # -!-
-    # [bool]
-    def login( self, password ):
-        self.socket.send( 'test' )
-        return True
-
-    # Envoie une commande et retourne la réponse
-    #
-    # -?-
-    # [str] command
-    # -!-
-    # [dict] / [bool(false)]:	Retourne le résultat de la commande ou False si une erreur survient
-    def sendCommand( self, command ):
-		if( not self.connected ):
+	# Se connecte à un serveur
+	#
+	# -?-
+	# [str] hostname
+	# [int] port
+	# -!-
+	# [bool]
+	def connect( self, hostname, port ):
+		if( not portIsValid( port ) ):
 			return False
-
-		# Envoie de la requête
-		request = { 'CODE': 2, 'DATA': command }
-		request = json.dumps( request )
 
 		try:
-			self.socket.send( request )
+			self.socket = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+			self.socket.settimeout( CONFIG['TIMEOUT'] )
+			self.socket.connect( (hostname, port) )
 		except socket.error:
+			self.connected = False
 			return False
 
+		self.connected = True
+		return True
+
+
+	# S'identifie auprès du serveur
+	#
+	# -?-
+	# [str] password:   Mot de passe
+	# -!-
+	# [bool]
+	def login( self, password ):
+		exchange = Exchange()
+
+		# ----------------------------
+		# Envoie de la demande de salt
+		# ----------------------------
+		exchange.purge()
+		exchange.add( 'MODE', 'ASKSALT' )
+		exchange.send( self.socket )
+
+		# --------------------
+		# Récupération du salt
+		# --------------------
+		exchange.recv( self.socket )
+
+		try:
+			salt = exchange.get( 'SALT' )
+		except KeyError:
+			return False
+
+		# ----------------------
+		# Envoie du mot de passe
+		# ----------------------
+		saltedPass = hashlib.sha1( password + salt ).hexdigest()
+
+		exchange.purge()
+		exchange.add( 'MODE', 'LOGIN' )
+		exchange.add( 'PASS', saltedPass )
+		exchange.send( self.socket )
+
+		# --------------------------
 		# Récupération de la réponse
-		try:
-			response = self.socket.recv( CONFIG['NTWBUFSIZE'] )
-		except socket.error:
-			return False
+		# --------------------------
+		exchange.recv( self.socket )
 
 		try:
-			return json.loads( response )
-		except ValueError:
+			self.authentified = exchange.get( 'STATUS' )
+		except KeyError:
+			return False
+
+		return self.authentified
+
+	# Envoie une commande et retourne la réponse
+	#
+	# -?-
+	# [str] command
+	# -!-
+	# [dict] / [bool(false)]:	Retourne le résultat de la commande ou False si une erreur survient
+	def sendCommand( self, command ):
+		if( not self.connected or not self.authentified ):
+			return False
+
+		exchange = Exchange()
+
+		# ---------------------
+		# Envoie de la commande
+		# ---------------------
+		exchange.purge()
+		exchange.add( 'COMMAND', command )
+		exchange.send( self.socket )
+
+		# -----------------------
+		# Réception de la réponse
+		# -----------------------
+		exchange.recv( self.socket )
+
+		try:
+			return {
+				'STATUS': exchange.get( 'STATUS' ),
+				'OUTPUT': exchange.get( 'OUTPUT' )
+			}
+		except KeyError:
 			return False
