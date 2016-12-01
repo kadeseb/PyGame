@@ -12,6 +12,6 @@ Programme écrit en Python permettant d'effectuer des actions à l'insu d'un uti
 * docopt
 
 # Utilisation
-- **PYJOKE.py** Permet de tester les commandes localement
-- ~~**CLIENT.py** Permet de se connecter à un serveur PyJoke~~
-- ~~**SERVER.py** Lance le serveur~~
+- ~~**PYJOKE.py** Permet de tester les commandes localement~~
+- **CLIENT.py** Permet de se connecter à un serveur PyJoke
+- **SERVER.py** Lance le serveur
