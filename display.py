@@ -32,8 +32,13 @@ class Manager:
 	# Rafraichi les fenêtres
 	def update( self ):
 		for windowID in xrange( 0, len( self.windowList ) ):
-			if( self.windowList[ windowID ] != None ):
-				self.windowList[ windowID ].update()
+			if( self.windowList[ windowID ] == None ):
+				continue
+
+			self.windowList[ windowID ].update()
+
+			if( self.windowList[ windowID ].getClosed() ):
+				self.windowList[ windowID ] = None;
 
 	# Permet de créer un fenêtre
 	#
@@ -69,7 +74,7 @@ class Manager:
 			return False
 
 		self.windowList[ windowID ].destroy()
-		self.windowList[ windowID ] = None
+		self.windowList[ windowID ].setClosed( True )
 
 		return True
 
@@ -153,7 +158,10 @@ class Manager:
 		if( title == None ):
 			title = 'Titre par défault'
 		elif( not isinstance( title, str ) ):
-			return None
+			try:
+				title = str( title )
+			except:
+				return None
 
 		return {
 			'IMAGE': imageID,
@@ -179,6 +187,7 @@ class BaseWindow( Toplevel ):
 		self._title = ' '
 		self.width = 500
 		self.height = 500
+		self.closed = False
 
 		# Configuration
 		self.title( ' ' )
@@ -242,6 +251,13 @@ class BaseWindow( Toplevel ):
 	def getTitle( self ):
 		return self.wm_title()
 
+	# Retourne l'état de la fenêtre
+	def getClosed( self ):
+		return self.closed
+
+	# Change l'état de fermeture de la fenêtre
+	def setClosed( self, value ):
+		self.closed = value
 #-------------------
 # Gère une fenêtre -
 #-------------------

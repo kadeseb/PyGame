@@ -1,11 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
-# Projet:	PyBlague
+# =======================================
+# Projet:	PyJoke
 # Rôle:		Contient toutes les commandes
-# Auteur:   kadeseb
 # Crée le:	09/10/2016
-# ----------------------------------------
+# =======================================
 from docopt import docopt, DocoptExit
 from functions import *
 import subprocess
@@ -298,8 +297,6 @@ class Command_Window( Command ):
 	_DESCRIBTION_ = "Gère l\'afichage de fenêtre"
 
 	def action( self, _args_, _ctx_ ):
-		print 'TEST'
-
 		# Liste des images/fenêtre
 		if( _args_['list'] ):
 			if( _args_['image'] ):
@@ -327,7 +324,7 @@ class Command_Window( Command ):
 			size = '%dx%d' % ( imageList[imageID]['width'], imageList[imageID]['height'] )
 			name = imageList[imageID]['name']
 
-			self.output += '\n%d\t\t%s\t\t%s' % ( imageID, size, name  )
+			self.output += '\n%d\t%s\t\t%s' % ( imageID, size, name )
 
 		self.code = Command._CODE_['OK']
 
@@ -341,7 +338,7 @@ class Command_Window( Command ):
 		for windowID in displayManager.getWindowIDList():
 			window = displayManager.getWindow( windowID )
 
-			self.output += '\n %d\t\t %d\t\t %s' % ( windowID, window.getRandomPosition() ,window.getImageName() )
+			self.output += '\n%d\t%d\t%s' % ( windowID, window.getRandomPosition(), str( window.getImageName() ) )
 
 		self.code = Command._CODE_['OK']
 
@@ -352,6 +349,8 @@ class Command_Window( Command ):
 	# [display.Manager] displayManager
 	def create( self, _args_, displayManager ):
 		config = displayManager.createConfig( _args_['--image'], _args_['--randomizePosition'], _args_['--title'] )
+
+		print config
 
 		if( config == None ):
 			self.code = Command._CODE_['BADARG']
