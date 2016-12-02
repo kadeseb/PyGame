@@ -34,7 +34,6 @@ class Server( threading.Thread ):
 			self.socket.bind( ("", CONFIG['PORT'] ) )
 			self.socket.listen( 10 )
 			self.socket.settimeout( CONFIG['TIMEOUT'] )
-			#self.socket.setblocking( 0 )
 		except socket.error:
 			print '$ ERREUR: La création du socket à échoué !'
 			raise SystemError()

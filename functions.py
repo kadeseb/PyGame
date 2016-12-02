@@ -1,11 +1,11 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
+# ========================================
 # Projet:	PyBlague
 # Rôle:		Regroupe les fonctions
 # Auteur:	kadeseb
 # Crée le:	09/10/2016
-# ----------------------------------------
+# ========================================
 import ast
 from random import randrange
 

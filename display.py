@@ -1,11 +1,11 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
+# =====================================
 # Projet:	PyBlague
 # Rôle:		Gère l'affichage de fenêtre
 # Auteur:	kadeseb
 # Crée le:	09/10/2016
-# ----------------------------------------
+# =====================================
 import random
 import PIL.Image
 import PIL.ImageTk

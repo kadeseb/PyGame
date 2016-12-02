@@ -1,11 +1,10 @@
 #!/usr/bin/python2.7
 # -*- coding: utf8 -*-
-# ----------------------------------------
-# Projet:	PyBlague
+# ========================================
+# Projet:	PyJoke
 # Rôle:		Gère les banques de ressources
-# Auteur:	kadeseb
 # Crée le:	09/10/2016
-# ----------------------------------------
+# ========================================
 import os
 import PIL.Image
 import PIL.ImageTk
@@ -46,11 +45,10 @@ class ImageBank():
 
 			self.imageList.append( container )
 
-	##
 	# Retourne une image aléatoire
+	#
 	# -!-
 	# [dict]
-	##
 	def getRandomImage( self ):
 		index = random.randrange( 0, len( self.imageList ) )
 
@@ -59,26 +57,24 @@ class ImageBank():
 	def getRandomImageID( self ):
 		return random.randrange( 0, len( self.imageList ) )
 
-	##
 	# Retourne l'image spécifié
+	#
 	# -?-
 	# [int] imageID:	ID de l'image
 	# -!-
 	# [dict]
-	##
 	def getImage( self, imageID ):
 		if( self.exist( imageID ) ):
 			return self.imageList[ imageID ]
 		else:
 			return None
 
-	##
 	# Vérifie l'existence d'une image
+	#
 	# -?-
 	# [int] imageID:	ID de l'imageID
 	# -!-
 	# [bool]
-	##
 	def exist( self, imageID ):
 		try:
 			self.imageList[ imageID ]
@@ -86,10 +82,9 @@ class ImageBank():
 			return False
 		return True
 
-	##
 	# Retourne la liste des images disponibles
+	#
 	# -!-
 	# [list]
-	##
 	def getList( self ):
 		return self.imageList

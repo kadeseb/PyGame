@@ -1,8 +1,11 @@
 {
   "PORT": 2048,
   "PASSWORD": "password",
+	"IMAGES_DIR": "img/",
+	"SOUNDS_DIR": "sound/",
   "CMDIDSIZE": 8,
-  "SALTSIZE": 10,
-  "IMAGES_DIR": "img/",
-  "SOUNDS_DIR": "sound/"
+  "SALTSIZE": 8,
+	"TIMEOUT": 5,
+	"NTWBUFSIZE": 2048,
+	"WINDOWS_POSUPDATEINTERVAL": 300
 }
