@@ -11,28 +11,13 @@ import PIL.ImageTk
 import random
 from config import *
 
-#--------------------
-# Gère les images -
-#--------------------
 class ImageBank():
-	##
 	# Constructeur
-	##
 	def __init__( self ):
 		imageNameList = os.listdir( CONFIG['IMAGES_DIR'] )
-
-		'''
-		if( len( imageNameList ) > CONFIG['WINDOWS_NUMBER'] ):
-			limit = CONFIG['WINDOWS_NUMBER']
-		else:
-			limit = len( imageNameList )
-
-		'''
-		limit = len( imageNameList )
-
 		self.imageList = []
 
-		for i in xrange( 0, limit ):
+		for i in xrange( 0, len( imageNameList ) ):
 			image = PIL.Image.open( CONFIG['IMAGES_DIR'] + imageNameList[i] )
 
 			container = {
@@ -50,10 +35,12 @@ class ImageBank():
 	# -!-
 	# [dict]
 	def getRandomImage( self ):
-		index = random.randrange( 0, len( self.imageList ) )
+		return self.imageList[ random.randrange( 0, len( self.imageList ) ) ]
 
-		return self.imageList[ index ]
-
+	# Retoune un id d'image aléatoire
+	#
+	# -!-
+	# [int]
 	def getRandomImageID( self ):
 		return random.randrange( 0, len( self.imageList ) )
 
@@ -75,7 +62,12 @@ class ImageBank():
 	# [int] imageID:	ID de l'imageID
 	# -!-
 	# [bool]
+	# -$-
+	# [TypeError]		! -?-
 	def exist( self, imageID ):
+		if( not isinstance( imageID, int ) ):
+			raise TypeError( '! -?-' )
+
 		try:
 			self.imageList[ imageID ]
 		except KeyError:

@@ -49,6 +49,8 @@ class Manager:
 	# 	'RANDOMIZEPOS': 	[bool] Position de la fenêtre aléatoire
 	#   'TITLE':		[string]/[None] Nom de la fenêtre / Nom aléatoire
 	# }
+	# -!-
+	# [bool]
 	def createWindow( self, config ):
 		if( not self.validConfig( config ) ):
 			return False
@@ -92,6 +94,12 @@ class Manager:
 
 		return IDList
 
+	# Retoune la fenêtre spécifié
+	#
+	# -?-
+	# [int] windowID
+	# -!-
+	# [WindowImage] / [None]
 	def getWindow( self, windowID ):
 		try:
 			return self.windowList[ windowID ]

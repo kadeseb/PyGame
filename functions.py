@@ -22,9 +22,6 @@ def strIsInt( string ):
 	except ValueError:
 		return False
 
-def strToDict( string ):
-	return ast.literal_eval( string )
-
 # Génére une chaine de caractère aléatoire
 #
 # -?-

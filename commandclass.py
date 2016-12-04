@@ -90,7 +90,7 @@ class Command:
 	        print 'name error'
 	        return None
 
-	# Reoune la description
+	# Retoune la description
 	#
 	# -?-
 	# [str]
@@ -349,8 +349,6 @@ class Command_Window( Command ):
 	# [display.Manager] displayManager
 	def create( self, _args_, displayManager ):
 		config = displayManager.createConfig( _args_['--image'], _args_['--randomizePosition'], _args_['--title'] )
-
-		print config
 
 		if( config == None ):
 			self.code = Command._CODE_['BADARG']

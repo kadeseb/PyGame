@@ -140,6 +140,7 @@ class ServerSession( threading.Thread ):
 
 		return True
 
+	# Authentifie un client
 	def login( self ):
 		exchange = Exchange()
 
@@ -301,5 +302,6 @@ class ClientSession:
 		except KeyError:
 			return False
 
+	# Contrôle si la connexion est terminée
 	def connectionClosed( self ):
 		return not self.connected
