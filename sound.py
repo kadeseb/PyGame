@@ -9,7 +9,6 @@ import os
 import time
 import pygame.mixer as Mixer
 from config import *
-from functions import *
 from volume import *
 
 class Manager():
@@ -44,30 +43,36 @@ class Manager():
 	def getSoundList( self ):
 		return self.soundList
 
-	# > Joue la liste de lecture
+	# Joue la liste de lecture
 	def performPlaylist( self ):
-		# Monte le son
-		self.volume.maximize()
+		if( Mixer.music.get_busy() ):
+			self.volume.maximize()
+			return
+		elif( not len( self.playlist  ) ):
+			return
+		else:
+			self.volume.maximize()
 
-		if( len( self.playlist ) and not Mixer.music.get_busy() ):
-			if( (time.time() - self.playlistTimer) >= self.nextDelay ):
-				soundConfig = self.playlist.pop( 0 )
+		if( (time.time() - self.playlistTimer) >= self.nextDelay ):
+			soundConfig = self.playlist.pop( 0 )
 
-				Mixer.music.load( CONFIG['SOUNDS_DIR'] + self.soundList[ soundConfig['ID'] ] )
-				Mixer.music.play()
-				self.playlistTimer = time.time()
+			Mixer.music.load( CONFIG['SOUNDS_DIR'] + self.soundList[ soundConfig['ID'] ] )
+			Mixer.music.play()
+			self.playlistTimer = time.time()
 
-				if( len( self.playlist ) ):
-					self.nextDelay = soundConfig['nextDelay']
-				else:
-					self.nextDelay = 0
+			if( len( self.playlist ) ):
+				self.nextDelay = soundConfig['nextDelay']
+			else:
+				self.nextDelay = 0
 
 	#//////////////////////////////////////
 	# Manipulation de la liste de lecture /
 	#//////////////////////////////////////
-	# > Ajoute un son dans la liste de lecture
+	# Ajoute un son dans la liste de lecture
+	#
 	# -?-
 	# [int] soundID:    ID du son
+	# [int] delay:		Delais avant la lecture suivante
 	# -!-
 	# [bool]:           Le son a été ajouté
 	def playlistAdd( self, soundID, delay=0 ):
@@ -82,7 +87,7 @@ class Manager():
 		self.playlist.append( soundConfig )
 		return True
 
-	# > Vide la liste de lecture
+	# Vide la liste de lecture
 	def playlistPurge( self ):
 		self.playlist = []
 		Mixer.music.stop()
